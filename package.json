@@ -5,5 +5,8 @@
     "chrome": "playwright test --project=chromium",
     "firefox": "playwright test --project=firefox",
     "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0"
   }
 }
