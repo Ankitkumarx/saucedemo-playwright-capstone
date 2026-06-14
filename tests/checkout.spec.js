@@ -1,28 +1,213 @@
 const { test, expect } = require('@playwright/test');
+const LoginPage = require('../src/pages/LoginPage');
+const CartPage = require('../src/pages/CartPage');
+const CheckoutPage = require('../src/pages/CheckoutPage');
 
-test('Successful Checkout', async ({ page }) => {
+test.describe('Checkout Tests', () => {
 
-    // Navigate and login
-    await page.goto('https://www.saucedemo.com');
-    await page.fill('#user-name', 'standard_user');
-    await page.fill('#password', 'secret_sauce');
-    await page.click('#login-button');
+    async function addProductAndOpenCheckout(page) {
 
-    // Add product to cart and open cart
-    await page.click('[data-test="add-to-cart-sauce-labs-backpack"]');
-    await page.click('.shopping_cart_link');
+        const cartPage = new CartPage(page);
 
-    // Begin checkout
-    await page.click('[data-test="checkout"]');
+        await cartPage.addBackpack();
+        await cartPage.openCart();
+        await cartPage.clickCheckout();
+    }
 
-    // Fill checkout info and continue
-    await page.fill('#first-name', 'Test');
-    await page.fill('#last-name', 'User');
-    await page.fill('#postal-code', '12345');
-    await page.click('[data-test="continue"]');
+    test.beforeEach(async ({ page }) => {
 
-    // Finish and assert
-    await page.click('[data-test="finish"]');
+        const loginPage = new LoginPage(page);
 
-    await expect(page.locator('.complete-header')).toContainText('Thank you');
+        await loginPage.goto();
+
+        await loginPage.login(
+            'standard_user',
+            'secret_sauce'
+        );
+    });
+
+    test('Checkout With Empty Cart', async ({ page }) => {
+
+        await page.click('.shopping_cart_link');
+
+        await expect(
+            page.locator('.cart_item')
+        ).toHaveCount(0);
+    });
+
+    test('Empty Checkout Form Validation', async ({ page }) => {
+
+        await addProductAndOpenCheckout(page);
+
+        await page.click('#continue');
+
+        await expect(
+            page.locator('[data-test="error"]')
+        ).toContainText('First Name is required');
+    });
+
+    test('Missing Last Name Validation', async ({ page }) => {
+
+        await addProductAndOpenCheckout(page);
+
+        await page.fill('#first-name', 'John');
+        await page.fill('#postal-code', '12345');
+
+        await page.click('#continue');
+
+        await expect(
+            page.locator('[data-test="error"]')
+        ).toContainText('Last Name is required');
+    });
+
+    test('Missing Postal Code Validation', async ({ page }) => {
+
+        await addProductAndOpenCheckout(page);
+
+        await page.fill('#first-name', 'John');
+        await page.fill('#last-name', 'Doe');
+
+        await page.click('#continue');
+
+        await expect(
+            page.locator('[data-test="error"]')
+        ).toContainText('Postal Code is required');
+    });
+
+    test('Successful Checkout', async ({ page }) => {
+
+        await addProductAndOpenCheckout(page);
+
+        const checkoutPage =
+            new CheckoutPage(page);
+
+        await checkoutPage.fillCheckoutInfo(
+            'John',
+            'Doe',
+            '12345'
+        );
+
+        await checkoutPage.continueCheckout();
+
+        await checkoutPage.finishCheckout();
+
+        await expect(
+            page.locator('.complete-header')
+        ).toContainText('Thank you');
+    });
+
+    test('Verify Order Confirmation Content', async ({ page }) => {
+
+        await addProductAndOpenCheckout(page);
+
+        const checkoutPage =
+            new CheckoutPage(page);
+
+        await checkoutPage.fillCheckoutInfo(
+            'John',
+            'Doe',
+            '12345'
+        );
+
+        await checkoutPage.continueCheckout();
+
+        await checkoutPage.finishCheckout();
+
+        await expect(
+            page.locator('.complete-text')
+        ).toContainText(
+            'Your order has been dispatched'
+        );
+    });
+
+    test('Verify Checkout Overview Page', async ({ page }) => {
+
+        await addProductAndOpenCheckout(page);
+
+        const checkoutPage =
+            new CheckoutPage(page);
+
+        await checkoutPage.fillCheckoutInfo(
+            'John',
+            'Doe',
+            '12345'
+        );
+
+        await checkoutPage.continueCheckout();
+
+        await expect(
+            page.locator('.summary_info')
+        ).toBeVisible();
+    });
+
+    test('Verify Payment Information Exists', async ({ page }) => {
+
+        await addProductAndOpenCheckout(page);
+
+        const checkoutPage =
+            new CheckoutPage(page);
+
+        await checkoutPage.fillCheckoutInfo(
+            'John',
+            'Doe',
+            '12345'
+        );
+
+        await checkoutPage.continueCheckout();
+
+        await expect(
+            page.locator('[data-test="payment-info-label"]')
+        ).toBeVisible();
+    });
+
+    test('Verify Shipping Information Exists', async ({ page }) => {
+
+        await addProductAndOpenCheckout(page);
+
+        const checkoutPage =
+            new CheckoutPage(page);
+
+        await checkoutPage.fillCheckoutInfo(
+            'John',
+            'Doe',
+            '12345'
+        );
+
+        await checkoutPage.continueCheckout();
+
+        await expect(
+            page.locator('[data-test="shipping-info-label"]')
+        ).toBeVisible();
+    });
+
+    test('Verify Total Amount Is Displayed', async ({ page }) => {
+
+        await addProductAndOpenCheckout(page);
+
+        const checkoutPage =
+            new CheckoutPage(page);
+
+        await checkoutPage.fillCheckoutInfo(
+            'John',
+            'Doe',
+            '12345'
+        );
+
+        await checkoutPage.continueCheckout();
+
+        await expect(
+            page.locator('.summary_total_label')
+        ).toBeVisible();
+    });
+
+    test('Cancel Checkout Flow', async ({ page }) => {
+
+        await addProductAndOpenCheckout(page);
+
+        await page.click('#cancel');
+
+        await expect(page)
+            .toHaveURL(/cart/);
+    });
+
 });

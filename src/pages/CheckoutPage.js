@@ -1,29 +1,60 @@
 class CheckoutPage {
 
- constructor(page){
-    this.page = page;
- }
+    constructor(page) {
 
- async fillCheckout(
-   first,
-   last,
-   zip
- ){
-    await this.page.fill(
-      '#first-name',
-      first
-    );
+        this.page = page;
 
-    await this.page.fill(
-      '#last-name',
-      last
-    );
+        this.firstName = '#first-name';
+        this.lastName = '#last-name';
+        this.postalCode = '#postal-code';
 
-    await this.page.fill(
-      '#postal-code',
-      zip
-    );
- }
+        this.continueBtn = '#continue';
+        this.finishBtn = '#finish';
+        this.cancelBtn = '#cancel';
+    }
+
+    async fillCheckoutInfo(
+        firstName,
+        lastName,
+        postalCode
+    ) {
+
+        await this.page.fill(
+            this.firstName,
+            firstName
+        );
+
+        await this.page.fill(
+            this.lastName,
+            lastName
+        );
+
+        await this.page.fill(
+            this.postalCode,
+            postalCode
+        );
+    }
+
+    async continueCheckout() {
+
+        await this.page.click(
+            this.continueBtn
+        );
+    }
+
+    async finishCheckout() {
+
+        await this.page.click(
+            this.finishBtn
+        );
+    }
+
+    async cancelCheckout() {
+
+        await this.page.click(
+            this.cancelBtn
+        );
+    }
 }
 
 module.exports = CheckoutPage;
